@@ -19,6 +19,23 @@
     
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles.css">
+    <style>
+        #error-screen {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 1s, visibility 0s 1s;
+        }
+        
+        #error-screen.visible {
+            opacity: 1 !important;
+            visibility: visible;
+            transition: opacity 1s;
+        }
+        
+        .error-text {
+            opacity: 1 !important;
+        }
+    </style>
     
     <!-- Tailwind Configuration -->
     <script>
@@ -252,8 +269,14 @@
         <div class="noise"></div>
     </div>
 
-    <!-- Glitchy Error Screen -->
+    <!-- Matrix Rain Overlay -->
+    <div id="matrix-rain" class="fixed inset-0 z-40 opacity-0 invisible transition-opacity duration-1000 overflow-hidden pointer-events-none bg-black/30">
+        <div id="matrix-canvas" class="absolute inset-0"></div>
+    </div>
+
+    <!-- Glitchy Error Screen with Binary Effects -->
     <div id="error-screen" class="fixed inset-0 bg-black z-50 opacity-0 invisible transition-all duration-1000 overflow-hidden">
+        <div id="binary-overlay" class="absolute inset-0"></div>
         <div class="absolute inset-0 error-grid"></div>
         <div class="absolute inset-0 error-glitch"></div>
         <div class="relative z-10 h-full flex flex-col items-center justify-center p-8 text-red-500 font-mono text-center">
@@ -275,14 +298,307 @@
     <button id="back-to-top" class="fixed bottom-8 right-8 bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center opacity-0 invisible transition-all duration-300">
         <i class="fas fa-arrow-up"></i>
     </button>
+    
+    <!-- Hidden Buttons -->
+    <button id="hope-button" class="fixed top-0 left-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Show Hope Message">
+    </button>
+    
+    <button id="second-button" class="fixed top-0 right-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Show System Failure Sequence">
+    </button>
 
     <!-- JavaScript -->
     <script src="script.js"></script>
     <script>
-        setTimeout(() => {
-            document.getElementById('hope-modal').classList.remove('opacity-0', 'invisible');
-            document.getElementById('hope-modal').classList.add('opacity-100', 'visible');
-        }, 10000);
-    </script>
+        // Matrix rain effect
+        function initMatrixRain() {
+            const canvas = document.createElement('canvas');
+            const container = document.getElementById('matrix-canvas');
+            container.innerHTML = '';
+            container.appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            // Binary characters - katakana for more matrix-like feel
+            const binary = '01';
+            
+            // Set font size and calculate columns
+            const fontSize = 16;
+            const columns = Math.floor(canvas.width / fontSize);
+            
+            // Create an array of drops - one per column
+            const drops = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.floor(Math.random() * -100);
+            }
+            
+            // Set the font
+            ctx.font = `${fontSize}px monospace`;
+            
+            // Drawing the characters
+            function draw() {
+                // Semi-transparent black to create trail effect
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Set the color and draw characters
+                ctx.fillStyle = '#0f0'; // Green text
+                
+                for (let i = 0; i < drops.length; i++) {
+                    // Random binary character
+                    const text = binary[Math.floor(Math.random() * binary.length)];
+                    
+                    // Draw the character
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    // Reset drop to top when it reaches bottom
+                    // Add randomness to reset to create more interesting patterns
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    
+                    // Move the y coordinate down
+                    drops[i]++;
+                }
+                
+                // Add some random characters that appear and fade out
+                    
+                // Call the animation frame
+                requestAnimationFrame(draw);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                const newColumns = Math.floor(canvas.width / fontSize);
+                
+                // Adjust drops array for new column count
+                if (newColumns > drops.length) {
+                    for (let i = drops.length; i < newColumns; i++) {
+                        drops[i] = Math.floor(Math.random() * -100);
+                    }
+                } else if (newColumns < drops.length) {
+                    drops.length = newColumns;
+                }
+            });
+            
+            // Start the animation
+            draw();
+        }
+
+        // Function to show hope modal - instant appearance like system error
+        function showHopeModal() {
+            const hopeModal = document.getElementById('hope-modal');
+            
+            // INSTANT appearance - no transitions
+            hopeModal.style.transition = 'none';
+            hopeModal.style.opacity = '1';
+            hopeModal.style.visibility = 'visible';
+            hopeModal.classList.remove('opacity-0', 'invisible');
+            hopeModal.classList.add('opacity-100', 'visible');
+            
+            // Hide the hope modal after 3 seconds - also instant
+            setTimeout(() => {
+                hopeModal.style.opacity = '0';
+                hopeModal.style.visibility = 'hidden';
+                hopeModal.classList.remove('opacity-100', 'visible');
+                hopeModal.classList.add('opacity-0', 'invisible');
+                
+                // Restore transitions for other uses
+                setTimeout(() => {
+                    hopeModal.style.transition = '';
+                }, 100);
+            }, 3000);
+        }
+        
+        // Function to show system failure followed by hope message
+        function showSystemFailureSequence() {
+            const errorScreen = document.getElementById('error-screen');
+            const hopeModal = document.getElementById('hope-modal');
+            
+            // INSTANT error screen appearance - no transitions
+            errorScreen.style.transition = 'none';
+            errorScreen.style.opacity = '1';
+            errorScreen.style.visibility = 'visible';
+            errorScreen.classList.remove('opacity-0', 'invisible');
+            errorScreen.classList.add('opacity-100', 'visible');
+            
+            // Create binary rain effect
+            createBinaryRain();
+            
+            // Show the error content instantly - like a real system crash
+            const errorText = errorScreen.querySelector('.error-text');
+            const errorLines = errorText.querySelectorAll('.error-line');
+            const errorCode = errorScreen.querySelector('.error-code');
+            
+            // ALL text appears INSTANTLY - no staggered timing
+            errorLines.forEach((line) => {
+                line.style.visibility = 'visible';
+                line.style.opacity = '1';
+                line.style.animation = 'none';
+            });
+            
+            // Error code also appears instantly
+            errorCode.style.visibility = 'visible';
+            errorCode.style.opacity = '1';
+            errorCode.style.animation = 'none';
+            
+            // After 3 seconds, INSTANTLY hide error screen and show hope message
+            setTimeout(() => {
+                // INSTANT disappearance - no fade
+                errorScreen.style.opacity = '0';
+                errorScreen.style.visibility = 'hidden';
+                errorScreen.classList.remove('opacity-100', 'visible');
+                errorScreen.classList.add('opacity-0', 'invisible');
+                
+                // Reset error screen visibility for next time
+                errorLines.forEach(line => {
+                    line.style.visibility = 'hidden';
+                    line.style.opacity = '0';
+                    line.style.animation = '';
+                });
+                errorCode.style.visibility = 'hidden';
+                errorCode.style.opacity = '0';
+                errorCode.style.animation = '';
+                
+                // INSTANT hope message appearance - no delay
+                const hopeModal = document.getElementById('hope-modal');
+                hopeModal.style.transition = 'none';
+                hopeModal.style.opacity = '1';
+                hopeModal.style.visibility = 'visible';
+                hopeModal.classList.remove('opacity-0', 'invisible');
+                hopeModal.classList.add('opacity-100', 'visible');
+                
+                // Hide hope message after 2 seconds - also instant
+                setTimeout(() => {
+                    hopeModal.style.opacity = '0';
+                    hopeModal.style.visibility = 'hidden';
+                    hopeModal.classList.remove('opacity-100', 'visible');
+                    hopeModal.classList.add('opacity-0', 'invisible');
+                    
+                    // Restore transitions for other uses
+                    setTimeout(() => {
+                        errorScreen.style.transition = '';
+                        hopeModal.style.transition = '';
+                    }, 100);
+                }, 2000);
+                
+            }, 3000);
+        }
+        
+        // Add event listeners for hidden buttons
+        document.addEventListener('DOMContentLoaded', () => {
+            const hopeButton = document.getElementById('hope-button');
+            const systemButton = document.getElementById('second-button');
+            
+            if (hopeButton) {
+                hopeButton.addEventListener('click', showHopeModal);
+            }
+            
+            if (systemButton) {
+                systemButton.addEventListener('click', showSystemFailureSequence);
+            }
+        });
+    
+    // Add fadeIn animation for error code
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes aggressiveAppear {
+            0% { 
+                opacity: 0; 
+                transform: scale(0.8) translateY(-10px);
+                filter: brightness(0);
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1.1) translateY(0px);
+                filter: brightness(2) contrast(2);
+            }
+            100% { 
+                opacity: 1; 
+                transform: scale(1) translateY(0px);
+                filter: brightness(1) contrast(1);
+            }
+        }
+        
+        /* Binary overlay styles */
+        #binary-overlay {
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 0;
+            overflow: hidden;
+        }
+        
+        .binary-digit {
+            position: absolute;
+            color: rgba(0, 255, 0, 0.5);
+            font-family: monospace;
+            font-size: 16px;
+            opacity: 0.7;
+            user-select: none;
+            pointer-events: none;
+        }
+        
+        @keyframes binaryFall {
+            0% { transform: translateY(-100%); opacity: 0; }
+            5% { opacity: 0.7; }
+            95% { opacity: 0.7; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Create binary rain effect for error screen
+    function createBinaryRain() {
+        const container = document.getElementById('binary-overlay');
+        if (!container) return;
+        
+        const binary = '01';
+        const columns = Math.floor(window.innerWidth / 16); // One character every 16px
+        const rows = Math.floor(window.innerHeight / 24);   // One row every 24px
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        // Create binary rain
+        for (let i = 0; i < columns; i++) {
+            // Only create binary in about 1/3 of the columns for better performance
+            if (Math.random() > 0.33) continue;
+            
+            // Random starting row
+            const startRow = Math.floor(Math.random() * -rows);
+            const duration = 2 + Math.random() * 3; // 2-5 seconds
+            const delay = Math.random() * 5;        // 0-5 seconds delay
+            
+            // Create a column of binary digits
+            for (let j = 0; j < rows; j++) {
+                const digit = document.createElement('div');
+                digit.className = 'binary-digit';
+                digit.textContent = binary[Math.floor(Math.random() * 2)];
+                digit.style.left = `${i * 16}px`;
+                digit.style.top = `${(startRow + j) * 24}px`;
+                digit.style.animation = `binaryFall ${duration}s linear ${delay + (j * 0.1)}s infinite`;
+                container.appendChild(digit);
+            }
+        }
+    }
+    
+    // Initialize binary rain when error screen is shown
+    const errorScreen = document.getElementById('error-screen');
+    if (errorScreen) {
+        const observer = new MutationObserver((mutations) => {
+            if (errorScreen.classList.contains('visible')) {
+                createBinaryRain();
+            }
+        });
+        observer.observe(errorScreen, { attributes: true, attributeFilter: ['class'] });
+    }
+</script>
 </body>
 </html>
