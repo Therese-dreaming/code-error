@@ -55,6 +55,25 @@
             animation: glitch-skew 1s infinite linear alternate-reverse;
         }
         
+        /* Red glitch variant for error text */
+        .glitch.error-glitch {
+            color: #ef4444; /* Red color */
+        }
+        
+        /* Fullscreen system error text */
+        .system-error-fullscreen {
+            font-size: 8vw; /* Responsive font size based on viewport width */
+            line-height: 0.9;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+        }
+        
+        @media (max-width: 768px) {
+            .system-error-fullscreen {
+                font-size: 12vw; /* Larger on mobile */
+            }
+        }
+        
         .glitch::before {
             content: attr(data-text);
             position: absolute;
@@ -671,13 +690,16 @@
         <div id="binary-overlay" class="absolute inset-0"></div>
         <div class="absolute inset-0 error-grid"></div>
         <div class="absolute inset-0 error-glitch"></div>
-        <div class="relative z-10 h-full flex flex-col items-center justify-center p-8 text-red-500 font-mono text-center">
-            <div class="text-4xl md:text-6xl font-bold mb-8 error-text">
-                <div class="error-line glitch" data-text="SYSTEM ERROR">SYSTEM ERROR</div>
+        <div class="relative z-10 h-full flex flex-col items-center justify-center p-4 text-red-500 font-mono text-center">
+            <!-- Fullscreen System Error Text -->
+            <div class="error-text flex-1 flex items-center justify-center">
+                <div class="error-line glitch error-glitch system-error-fullscreen" data-text="SYSTEM ERROR">SYSTEM ERROR</div>
             </div>
-            <div class="error-code text-sm md:text-base mt-12">
-                <div>ERROR CODE: 0x48 0x4F 0x50 0x45 0x5F 0x4E 0x4F 0x54 0x5F 0x46 0x4F 0x55 0x4E 0x44</div>
-                <div class="mt-2">PLEASE STAND BY FOR SYSTEM RECOVERY</div>
+            
+            <!-- Error Code at Bottom -->
+            <div class="error-code text-xs md:text-sm absolute bottom-8 left-1/2 transform -translate-x-1/2 w-full px-4">
+                <div class="mb-2">ERROR CODE: 0x48 0x4F 0x50 0x45 0x5F 0x4E 0x4F 0x54 0x5F 0x46 0x4F 0x55 0x4E 0x44</div>
+                <div>PLEASE STAND BY FOR SYSTEM RECOVERY</div>
             </div>
         </div>
         <div class="scanlines"></div>
@@ -712,17 +734,64 @@
                 submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
                 submitButton.disabled = true;
                 
-                // Simulate API call
+                // Simulate API call with error
                 setTimeout(() => {
-                    alert('Booking form submitted successfully! Redirecting to payment...');
-                    // In a real application, you would redirect to payment gateway
-                    // window.location.href = 'payment.html';
+                    // Show realistic error message
+                    showPaymentError();
                     
                     // Reset button
                     submitButton.innerHTML = originalText;
                     submitButton.disabled = false;
                 }, 2000);
             });
+            
+            // Function to show payment error
+            function showPaymentError() {
+                // Create error modal
+                const errorModal = document.createElement('div');
+                errorModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+                errorModal.innerHTML = `
+                    <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-lg font-medium text-gray-900">Payment Processing Error</h3>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-sm text-gray-600 mb-3">
+                                We encountered an error while processing your payment. Please try again or contact support.
+                            </p>
+                            <div class="bg-gray-100 p-3 rounded-md">
+                                <p class="text-xs font-mono text-gray-700">
+                                    <strong>Error Code:</strong> PAYMENT_GATEWAY_TIMEOUT<br>
+                                    <strong>Reference:</strong> TXN_${Math.random().toString(36).substr(2, 9).toUpperCase()}<br>
+                                    <strong>Timestamp:</strong> ${new Date().toISOString()}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="this.closest('.fixed').remove()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors">
+                                Close
+                            </button>
+                            <button onclick="this.closest('.fixed').remove(); document.getElementById('booking-form').dispatchEvent(new Event('submit'))" class="flex-1 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(errorModal);
+                
+                // Auto-remove after 10 seconds if user doesn't interact
+                setTimeout(() => {
+                    if (errorModal.parentNode) {
+                        errorModal.remove();
+                    }
+                }, 10000);
+            }
             
             // Real-time price calculation for additional services
             const checkboxes = document.querySelectorAll('input[type="checkbox"]:not([required])');
