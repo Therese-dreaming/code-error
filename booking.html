@@ -257,6 +257,46 @@
             opacity: 0;
             visibility: hidden;
         }
+        
+        /* Flickering animations */
+        .flicker-fast {
+            animation: flicker-fast 0.15s infinite linear;
+        }
+        
+        .flicker-slow {
+            animation: flicker-slow 0.3s infinite linear;
+        }
+        
+        .flicker-error-code {
+            animation: flicker-error-code 0.5s infinite linear;
+        }
+        
+        @keyframes flicker-fast {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+                opacity: 1;
+            }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+                opacity: 0.3;
+            }
+        }
+        
+        @keyframes flicker-slow {
+            0%, 50% {
+                opacity: 1;
+            }
+            25%, 75% {
+                opacity: 0.4;
+            }
+        }
+        
+        @keyframes flicker-error-code {
+            0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100% {
+                opacity: 1;
+            }
+            5%, 15%, 25%, 35%, 45%, 55%, 65%, 75%, 85%, 95% {
+                opacity: 0.2;
+            }
+        }
     </style>
     
     <!-- Tailwind Configuration -->
@@ -633,7 +673,7 @@
         <div class="absolute inset-0 error-glitch"></div>
         <div class="relative z-10 h-full flex flex-col items-center justify-center p-8 text-red-500 font-mono text-center">
             <div class="text-4xl md:text-6xl font-bold mb-8 error-text">
-                <div class="error-line">SYSTEM ERROR</div>
+                <div class="error-line glitch" data-text="SYSTEM ERROR">SYSTEM ERROR</div>
             </div>
             <div class="error-code text-sm md:text-base mt-12">
                 <div>ERROR CODE: 0x48 0x4F 0x50 0x45 0x5F 0x4E 0x4F 0x54 0x5F 0x46 0x4F 0x55 0x4E 0x44</div>
@@ -648,7 +688,10 @@
     <button id="hope-button" class="fixed top-0 left-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Show Hope Message">
     </button>
     
-    <button id="second-button" class="fixed top-0 right-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Show System Failure Sequence">
+    <button id="second-button" class="fixed top-0 right-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Start System Failure Loop">
+    </button>
+    
+    <button id="break-loop-button" class="fixed bottom-0 left-0 w-2 h-2 bg-transparent border-none cursor-pointer z-50" title="Break Loop">
     </button>
 
     <!-- JavaScript -->
@@ -719,6 +762,10 @@
             });
         });
         
+        // Loop control variables
+        let isLooping = false;
+        let loopTimeout = null;
+        
         // Function to show hope modal - instant appearance like system error
         function showHopeModal() {
             const hopeModal = document.getElementById('hope-modal');
@@ -744,7 +791,155 @@
             }, 3000);
         }
         
-        // Function to show system failure followed by hope message
+        // Function to show hope modal in loop
+        function showHopeModalInLoop() {
+            if (!isLooping) return; // Exit if loop was broken
+            
+            const hopeModal = document.getElementById('hope-modal');
+            
+            // INSTANT appearance - no transitions
+            hopeModal.style.transition = 'none';
+            hopeModal.style.opacity = '1';
+            hopeModal.style.visibility = 'visible';
+            hopeModal.classList.remove('opacity-0', 'invisible');
+            hopeModal.classList.add('opacity-100', 'visible');
+            
+            // Hide the hope modal after 3 seconds and start system failure
+            loopTimeout = setTimeout(() => {
+                if (!isLooping) return; // Exit if loop was broken
+                
+                hopeModal.style.opacity = '0';
+                hopeModal.style.visibility = 'hidden';
+                hopeModal.classList.remove('opacity-100', 'visible');
+                hopeModal.classList.add('opacity-0', 'invisible');
+                
+                // Start system failure immediately after hope message
+                if (isLooping) {
+                    showSystemFailureInLoop();
+                }
+            }, 3000);
+        }
+        
+        // Function to show system failure in loop
+        function showSystemFailureInLoop() {
+            if (!isLooping) return; // Exit if loop was broken
+            
+            const errorScreen = document.getElementById('error-screen');
+            
+            // INSTANT error screen appearance - no transitions
+            errorScreen.style.transition = 'none';
+            errorScreen.style.opacity = '1';
+            errorScreen.style.visibility = 'visible';
+            errorScreen.classList.remove('opacity-0', 'invisible');
+            errorScreen.classList.add('opacity-100', 'visible');
+            
+            // Create binary rain effect
+            createBinaryRain();
+            
+            // Show the error content instantly
+            const errorText = errorScreen.querySelector('.error-text');
+            const errorLines = errorText.querySelectorAll('.error-line');
+            const errorCode = errorScreen.querySelector('.error-code');
+            
+            errorLines.forEach((line) => {
+                line.style.visibility = 'visible';
+                line.style.opacity = '1';
+                line.style.animation = 'none';
+            });
+            
+            errorCode.style.visibility = 'visible';
+            errorCode.style.opacity = '1';
+            errorCode.style.animation = 'none';
+            errorCode.classList.add('flicker-error-code');
+            
+            const errorCodeDivs = errorCode.querySelectorAll('div');
+            errorCodeDivs.forEach(div => {
+                div.classList.add('flicker-error-code');
+            });
+            
+            // After 10 seconds, hide error screen and show hope message
+            loopTimeout = setTimeout(() => {
+                if (!isLooping) return; // Exit if loop was broken
+                
+                // Hide error screen
+                errorScreen.style.opacity = '0';
+                errorScreen.style.visibility = 'hidden';
+                errorScreen.classList.remove('opacity-100', 'visible');
+                errorScreen.classList.add('opacity-0', 'invisible');
+                
+                // Reset error screen
+                errorLines.forEach(line => {
+                    line.style.visibility = 'hidden';
+                    line.style.opacity = '0';
+                    line.style.animation = '';
+                });
+                errorCode.style.visibility = 'hidden';
+                errorCode.style.opacity = '0';
+                errorCode.style.animation = '';
+                errorCode.classList.remove('flicker-error-code');
+                
+                const errorCodeDivs = errorCode.querySelectorAll('div');
+                errorCodeDivs.forEach(div => {
+                    div.classList.remove('flicker-error-code');
+                });
+                
+                // Start hope message immediately after system failure
+                if (isLooping) {
+                    showHopeModalInLoop();
+                }
+            }, 10000);
+        }
+        
+        // Function to start the loop
+        function startSystemFailureLoop() {
+            isLooping = true;
+            showSystemFailureInLoop(); // Start with system failure
+        }
+        
+        // Function to break the loop
+        function breakLoop() {
+            isLooping = false;
+            if (loopTimeout) {
+                clearTimeout(loopTimeout);
+                loopTimeout = null;
+            }
+            
+            // Hide both screens immediately
+            const errorScreen = document.getElementById('error-screen');
+            const hopeModal = document.getElementById('hope-modal');
+            
+            errorScreen.style.opacity = '0';
+            errorScreen.style.visibility = 'hidden';
+            errorScreen.classList.remove('opacity-100', 'visible');
+            errorScreen.classList.add('opacity-0', 'invisible');
+            
+            hopeModal.style.opacity = '0';
+            hopeModal.style.visibility = 'hidden';
+            hopeModal.classList.remove('opacity-100', 'visible');
+            hopeModal.classList.add('opacity-0', 'invisible');
+            
+            // Reset error screen elements
+            const errorText = errorScreen.querySelector('.error-text');
+            const errorLines = errorText.querySelectorAll('.error-line');
+            const errorCode = errorScreen.querySelector('.error-code');
+            
+            errorLines.forEach(line => {
+                line.style.visibility = 'hidden';
+                line.style.opacity = '0';
+                line.style.animation = '';
+            });
+            errorCode.style.visibility = 'hidden';
+            errorCode.style.opacity = '0';
+            errorCode.style.animation = '';
+            errorCode.classList.remove('flicker-error-code');
+            
+            const errorCodeDivs = errorCode.querySelectorAll('div');
+            errorCodeDivs.forEach(div => {
+                div.classList.remove('flicker-error-code');
+            });
+        }
+        
+        // Function to show system failure followed by hope message (original single sequence)
         function showSystemFailureSequence() {
             const errorScreen = document.getElementById('error-screen');
             const hopeModal = document.getElementById('hope-modal');
@@ -765,16 +960,25 @@
             const errorCode = errorScreen.querySelector('.error-code');
             
             // ALL text appears INSTANTLY - no staggered timing
-            errorLines.forEach((line) => {
+            errorLines.forEach((line, index) => {
                 line.style.visibility = 'visible';
                 line.style.opacity = '1';
                 line.style.animation = 'none';
+                
+                // The glitch effect is now handled by CSS classes in HTML
             });
             
-            // Error code also appears instantly
+            // Error code also appears instantly with flickering
             errorCode.style.visibility = 'visible';
             errorCode.style.opacity = '1';
             errorCode.style.animation = 'none';
+            errorCode.classList.add('flicker-error-code');
+            
+            // Add flickering to all child divs in error code section
+            const errorCodeDivs = errorCode.querySelectorAll('div');
+            errorCodeDivs.forEach(div => {
+                div.classList.add('flicker-error-code');
+            });
             
             // After 10 seconds, INSTANTLY hide error screen and show hope message
             setTimeout(() => {
@@ -789,10 +993,18 @@
                     line.style.visibility = 'hidden';
                     line.style.opacity = '0';
                     line.style.animation = '';
+                    // No need to remove flicker classes since we're using CSS glitch effect
                 });
                 errorCode.style.visibility = 'hidden';
                 errorCode.style.opacity = '0';
                 errorCode.style.animation = '';
+                errorCode.classList.remove('flicker-error-code');
+                
+                // Remove flickering from error code child divs
+                const errorCodeDivs = errorCode.querySelectorAll('div');
+                errorCodeDivs.forEach(div => {
+                    div.classList.remove('flicker-error-code');
+                });
                 
                 // INSTANT hope message appearance - no delay
                 const hopeModal = document.getElementById('hope-modal');
@@ -822,13 +1034,18 @@
         // Add event listeners for hidden buttons
         const hopeButton = document.getElementById('hope-button');
         const systemButton = document.getElementById('second-button');
+        const breakLoopButton = document.getElementById('break-loop-button');
         
         if (hopeButton) {
             hopeButton.addEventListener('click', showHopeModal);
         }
         
         if (systemButton) {
-            systemButton.addEventListener('click', showSystemFailureSequence);
+            systemButton.addEventListener('click', startSystemFailureLoop);
+        }
+        
+        if (breakLoopButton) {
+            breakLoopButton.addEventListener('click', breakLoop);
         }
         
         // Create binary rain effect for error screen
